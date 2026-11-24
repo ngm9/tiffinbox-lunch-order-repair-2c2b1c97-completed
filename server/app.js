@@ -9,8 +9,8 @@ const orders = [];
 let nextOrderId = 1;
 
 app.get('/api/menu', (req, res) => {
-  const veg = req.query.veg;
-  if (veg === true) {
+  const {veg} = req.query;
+  if (veg === 'true') {
     return res.json(menu.filter((dish) => dish.isVeg));
   }
   return res.json(menu);
@@ -24,12 +24,24 @@ app.post('/api/orders', (req, res) => {
   const { dishId, quantity } = req.body;
 
   const dish = menu.find((item) => item.id === dishId);
+  if(!dish){
+    return res.status(404).json({error:'Dish not found'});
+  }
+  const parsedQuantity=Number(quantity);
+  if(
+    typeof quantity === 'boolean' ||
+    !Number.isInteger(parsedQuantity)||
+    parsedQuantity<=0 ||
+    parsedQuantity>20
+  ){
+    return res.status(400).json({error:'Invalid quantity'});
+  }
 
   const order = {
     id: nextOrderId++,
     dishId,
-    quantity,
-    total: dish.price * quantity
+    quantity:parsedQuantity,
+    total: dish.price * parsedQuantity,
   };
   orders.push(order);
   return res.status(201).json(order);
